@@ -1,0 +1,32 @@
+# ---- 本地工作数据：每台机器自己的数据，绝不入库 ----
+data.json
+instance.json
+data.local.json
+*.local.json
+
+# ---- 导出的数据包：可能含接入方式、备注等私人信息，绝不入库 ----
+exports/
+*-export.json
+data-package*.json
+backup-*.json
+
+# ---- 密钥与凭据 ----
+secrets.json
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+secrets/
+*secret*
+*credential*
+
+# ---- 本地专用配置 ----
+config.local.*
+settings.local.*
+
+# ---- Python / 系统杂项 ----
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db

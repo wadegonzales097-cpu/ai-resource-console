@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI工作资源管理台</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body { font-family: "PingFang SC","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif; background:#101218; color:#dfe3ea; }
+  header.top { display:flex; align-items:center; gap:10px; padding:10px 16px; background:#171a21; border-bottom:1px solid #262b36; position:sticky; top:0; z-index:20; flex-wrap:wrap; }
+  header.top .logo { font-size:17px; font-weight:700; letter-spacing:.04em; }
+  #modeBadge { font-size:12px; padding:3px 10px; border-radius:20px; border:1px solid #3a4358; color:#9fb4d8; }
+  #modeBadge.remote { border-color:#2f7a4c; color:#8fe3ae; }
+  header.top .sp { flex:1; }
+  .btn { background:#222836; color:#dfe3ea; border:1px solid #39415a; border-radius:9px; padding:7px 14px; font-size:13.5px; cursor:pointer; }
+  .btn:hover { border-color:#54628a; color:#fff; }
+  .btn.on { background:#3a6fd8; border-color:#3a6fd8; color:#fff; }
+  .btn.danger { border-color:#7a3a3a; color:#f0b0b0; }
+  .btn.small { padding:4px 10px; font-size:12.5px; }
+  main { padding:14px 16px 40px; max-width:1440px; margin:0 auto; }
+  #officeWrap { border:1px solid #262b36; border-radius:12px; overflow:hidden; background:#14161c; }
+  #officeFrame { width:100%; height:560px; border:0; display:block; }
+  body.office-full #officeFrame { height:calc(100vh - 190px); }
+  body.office-full #tableWrap, body.office-full #drawerHint { display:none; }
+  h2.sec { font-size:14px; color:#9aa3b2; letter-spacing:.1em; margin:20px 0 8px; }
+  table { width:100%; border-collapse:collapse; font-size:13.5px; }
+  th, td { text-align:left; padding:7px 9px; border-bottom:1px solid #22262f; vertical-align:top; }
+  th { color:#8b93a3; font-weight:600; font-size:12.5px; }
+  tr.mrow { cursor:pointer; }
+  tr.mrow:hover td { background:#1a1e28; }
+  .dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; }
+  .badge { font-size:11px; border:1px solid #3a4358; border-radius:10px; padding:1px 7px; color:#aeb9cc; white-space:nowrap; }
+  .zoneHead td { background:#191d27; color:#c9d2df; font-weight:700; font-size:13px; }
+  .muted { color:#8b93a3; } .small { font-size:12.5px; }
+  /* 详情抽屉 */
+  #drawer { position:fixed; top:0; right:0; width:380px; max-width:92vw; height:100vh; background:#181b23; border-left:1px solid #2c3242; z-index:40; padding:18px; overflow-y:auto; transform:translateX(105%); transition:transform .18s; }
+  #drawer.open { transform:none; }
+  #drawer h3 { font-size:16px; margin-bottom:4px; }
+  #drawer .kv { margin:10px 0; font-size:13.5px; line-height:1.65; }
+  #drawer .kv b { color:#8b93a3; font-weight:600; display:inline-block; min-width:74px; }
+  /* 设置 */
+  #viewSettings { display:none; }
+  .setLayout { display:flex; gap:18px; align-items:flex-start; }
+  .setNav { flex:0 0 168px; display:flex; flex-direction:column; gap:4px; position:sticky; top:70px; }
+  .setNav button { text-align:left; background:transparent; border:1px solid transparent; color:#aeb9cc; padding:8px 12px; border-radius:8px; cursor:pointer; font-size:13.5px; }
+  .setNav button.on { background:#222836; color:#fff; border-color:#39415a; }
+  .setBody { flex:1; min-width:0; }
+  .card { background:#171a21; border:1px solid #262b36; border-radius:12px; padding:16px 18px; margin-bottom:16px; }
+  .card h3 { font-size:15px; margin-bottom:10px; }
+  .card p.desc { color:#9aa3b2; font-size:13px; line-height:1.7; margin-bottom:10px; }
+  .frow { display:flex; gap:10px; align-items:center; margin:8px 0; flex-wrap:wrap; }
+  .frow label { flex:0 0 168px; color:#aeb9cc; font-size:13px; }
+  .frow input[type=text], .frow input[type=number], .frow select, .frow textarea {
+    background:#101218; color:#e6eaf1; border:1px solid #333a4e; border-radius:8px; padding:7px 10px; font-size:13.5px; }
+  .frow input[type=text], .frow input[type=url] { flex:1; min-width:200px; }
+  .frow input[type=url] { background:#101218; color:#e6eaf1; border:1px solid #333a4e; border-radius:8px; padding:7px 10px; font-size:13.5px; flex:1; min-width:200px; }
+  .frow input[type=number] { width:100px; }
+  .frow textarea { flex:1; min-width:260px; }
+  textarea.lines { width:100%; min-height:150px; background:#101218; color:#e6eaf1; border:1px solid #333a4e; border-radius:8px; padding:9px 11px; font-size:13px; line-height:1.6; }
+  .switch { position:relative; width:44px; height:24px; flex:0 0 auto; }
+  .switch input { opacity:0; width:100%; height:100%; position:absolute; cursor:pointer; margin:0; }
+  .switch i { position:absolute; inset:0; background:#333a4e; border-radius:20px; transition:.15s; pointer-events:none; }
+  .switch i:after { content:''; position:absolute; left:3px; top:3px; width:18px; height:18px; border-radius:50%; background:#aeb9cc; transition:.15s; }
+  .switch input:checked + i { background:#3a6fd8; }
+  .switch input:checked + i:after { left:23px; background:#fff; }
+  .lockNote { display:none; background:rgba(96,58,14,.25); border:1px solid #a8742c; color:#ffd9a0; border-radius:9px; padding:9px 12px; font-size:13px; margin-bottom:12px; line-height:1.6; }
+  body.remote .lockNote { display:block; }
+  body.remote .lockable { opacity:.55; pointer-events:none; }
+  #layoutSvg { width:100%; background:#14161c; border:1px solid #262b36; border-radius:10px; touch-action:none; user-select:none; }
+  .warn { color:#ffb35c; font-size:12.5px; }
+  .ok { color:#8fe3ae; font-size:12.5px; }
+  pre.fmt { background:#101218; border:1px solid #262b36; border-radius:9px; padding:12px; font-size:12px; line-height:1.6; overflow-x:auto; color:#aeb9cc; white-space:pre-wrap; }
+  #toast { position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(20px); background:#222836; border:1px solid #3a6fd8; color:#fff; padding:9px 18px; border-radius:10px; font-size:13.5px; opacity:0; pointer-events:none; transition:.2s; z-index:60; }
+  #toast.show { opacity:1; transform:translateX(-50%); }
+  #fatal { display:none; margin:40px auto; max-width:640px; background:#2a1f1f; border:1px solid #5a3434; color:#f0c0c0; border-radius:12px; padding:18px; line-height:1.8; font-size:14px; }
+  ol.help { margin:6px 0 6px 20px; line-height:1.9; font-size:13.5px; color:#c9d2df; }
+  .pill { display:inline-block; background:#222836; border:1px solid #39415a; border-radius:8px; padding:0 8px; font-size:12.5px; }
+  /* 接入向导 */
+  .card h4 { font-size:13px; color:#9aa3b2; letter-spacing:.06em; margin:16px 0 8px; }
+  .typeGrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; }
+  .typeCard { border:1px solid #333a4e; border-radius:10px; padding:10px 12px; cursor:pointer; background:#14161c; }
+  .typeCard:hover { border-color:#54628a; }
+  .typeCard.on { border-color:#3a6fd8; background:#1b2742; }
+  .typeCard b { display:block; font-size:13.5px; margin-bottom:4px; color:#e6eaf1; }
+  .typeCard span { display:block; color:#8b93a3; font-size:12px; line-height:1.5; }
+  /* 部署指南 */
+  .dangerNote { background:rgba(96,58,14,.25); border:1px solid #a8742c; color:#ffd9a0; border-radius:9px; padding:9px 12px; font-size:13px; margin:10px 0; line-height:1.7; }
+  #deployGuide ol { margin:4px 0 10px 20px; line-height:1.8; font-size:13.5px; color:#c9d2df; }
+  #deployGuide p.desc { margin-bottom:6px; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo" id="appTitle">AI工作资源管理台</div>
+  <span id="modeBadge">本地模式</span>
+  <div class="sp"></div>
+  <button class="btn on" id="btnMain" data-i18n="navMain">管理台</button>
+  <button class="btn" id="btnOffice" data-i18n="navOffice">3D办公室</button>
+  <button class="btn" id="btnOpen" data-i18n="navOpen">在浏览器中打开</button>
+  <button class="btn" id="btnSettings" data-i18n="navSettings">设置</button>
+</header>
+
+<div id="fatal"></div>
+
+<main id="viewMain">
+  <div id="officeWrap"><iframe id="officeFrame" src="office.html" title="办公室"></iframe></div>
+  <div id="drawerHint" class="small muted" style="margin-top:8px" data-i18n="drawerHint">点下方名单里的成员可看详细内容。</div>
+  <div id="tableWrap">
+    <h2 class="sec" data-i18n="memberList">成员名单</h2>
+    <table id="memberTable"><thead><tr>
+      <th data-i18n="colStatus">状态</th><th data-i18n="colName">名称</th><th data-i18n="colTier">层级</th>
+      <th data-i18n="colTask">当前任务 / 说明</th><th data-i18n="colZone">区域</th>
+    </tr></thead><tbody id="memberTbody"></tbody></table>
+  </div>
+</main>
+
+<main id="viewSettings">
+  <div class="setLayout">
+    <nav class="setNav" id="setNav">
+      <button data-sec="help" class="on" data-i18n="secHelp">上手说明</button>
+      <button data-sec="general" data-i18n="secGeneral">通用与显示</button>
+      <button data-sec="source" data-i18n="secSource">数据源</button>
+      <button data-sec="connect" data-i18n="secConnect">接入资源</button>
+      <button data-sec="deploy" data-i18n="secDeploy">部署与远程访问</button>
+      <button data-sec="members" data-i18n="secMembers">成员管理</button>
+      <button data-sec="zones" data-i18n="secZones">区域管理</button>
+      <button data-sec="layout" data-i18n="secLayout">布局示意图</button>
+      <button data-sec="lines" data-i18n="secLines">台词库</button>
+      <button data-sec="data" data-i18n="secData">数据管理</button>
+    </nav>
+    <div class="setBody">
+      <div class="lockNote" data-i18n="remoteLock">当前是实时模式（只读看数据）：成员、区域、布局、台词的编辑已锁定。要修改请到「数据源」切回本地模式。</div>
+
+      <section class="setSec" id="sec-help">
+        <div class="card">
+          <h3 data-i18n="helpTitle">第一次使用？照这个顺序设，设完就能用</h3>
+          <ol class="help" id="helpSteps"></ol>
+        </div>
+        <div class="card">
+          <h3 data-i18n="modeTitle">两种数据模式</h3>
+          <p class="desc" id="modeDesc"></p>
+        </div>
+      </section>
+
+      <section class="setSec" id="sec-general" hidden>
+        <div class="card">
+          <h3 data-i18n="secGeneral">通用与显示</h3>
+          <div class="frow"><label data-i18n="fAppName">程序名称</label><input type="text" id="gAppName"></div>
+          <div class="frow"><label data-i18n="fLang">界面语言 Language</label>
+            <select id="gLang"><option value="zh">中文</option><option value="en">English</option></select></div>
+          <div class="frow"><label data-i18n="fBubbles">头顶说话气泡</label>
+            <span class="switch"><input type="checkbox" id="gBubbles"><i></i></span>
+            <span class="small muted" data-i18n="fBubblesDesc">监工互动时成员头顶冒的台词气泡</span></div>
+          <div class="frow"><label data-i18n="fNames">头顶名称</label>
+            <span class="switch"><input type="checkbox" id="gNames"><i></i></span>
+            <span class="small muted" data-i18n="fNamesDesc">3D / 2D 里每个人头顶的名字</span></div>
+        </div>
+      </section>
+
+      <section class="setSec" id="sec-source" hidden>
+        <div class="card">
+          <h3 data-i18n="secSource">数据源</h3>
+          <div class="frow"><label data-i18n="fMode">模式</label>
+            <select id="sMode"><option value="local">本地模式（可编辑）</option><option value="remote">实时模式（只读）</option></select></div>
+          <div class="frow"><label data-i18n="fStateUrl">状态接口地址</label><input type="url" id="sStateUrl" placeholder="https://your-server.example.com/agent-state.json"></div>
+          <div class="frow"><label data-i18n="fEventsUrl">事件接口地址</label><input type="url" id="sEventsUrl" placeholder="https://your-server.example.com/agent-events.jsonl"></div>
+          <div class="frow"><label></label>
+            <button class="btn small" id="sTest" data-i18n="btnTest">测试连接</button>
+            <span id="sTestResult" class="small"></span></div>
+          <p class="desc" data-i18n="sourceDesc">实时模式下，办公室与名单展示你填写的接口返回的实时状态与事件；接口断线时会自动回退展示本地数据并给出提示，不会白屏。成员的区域/层级归属仍按本地成员档案里同 id 的设置走，接口里多出的成员会落到第一个普通区域。编辑（成员/区域/布局/台词）只在本地模式可用。</p>
+          <h3 data-i18n="fmtTitle">接口格式说明</h3>
+          <pre class="fmt" id="fmtSpec"></pre>
+        </div>
+      </section>
+
+      <section class="setSec" id="sec-connect" hidden>
+        <div class="card lockable">
+          <h3 data-i18n="secConnect">接入资源</h3>
+          <p class="desc" data-i18n="connectDesc">按四步把一个新资源接进来：先选类型，再填它自己的参数，点「测试连接」当场验通，最后保存为资源。保存后去「成员管理」做日常管理。</p>
+          <h4 data-i18n="wStep1">第一步 · 选类型</h4>
+          <div id="wTypes" class="typeGrid"></div>
+          <div id="wStep2" hidden>
+            <h4 data-i18n="wStep2">第二步 · 填参数</h4>
+            <div id="wForm"></div>
+          </div>
+          <div id="wStep34" hidden>
+            <h4 data-i18n="wStep34">第三步 · 测试连接 → 第四步 · 保存为资源</h4>
+            <div class="frow"><label></label>
+              <button class="btn" id="wTest" data-i18n="btnTestConn">测试连接</button>
+              <button class="btn" id="wSave" data-i18n="btnSaveResource">保存为资源</button>
+              <span id="wWarn" class="warn"></span><span id="wTestResult" class="small"></span></div>
+            <div id="wDone" style="margin-top:6px"></div>
+            <p class="desc" data-i18n="credNote">密码 / API Key / 私钥只保存在本机程序目录的 secrets.json 里，不进数据包与导出文件；导出与迁移时凭据不跟随，到新电脑需重新填入。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="setSec" id="sec-deploy" hidden>
+        <div class="card">
+          <h3 data-i18n="secDeploy">部署与远程访问</h3>
+          <div id="deployGuide"></div>
+        </div>
+        <div class="card lockable">
+          <h3 data-i18n="deployCfgTitle">我的部署</h3>
+          <div class="frow"><label data-i18n="fDeployMode">部署方式</label><select id="dpMode"></select></div>
+          <div class="frow"><label data-i18n="fPublicUrl">对外访问地址</label><input type="url" id="dpUrl" placeholder="https://console.example.com"></div>
+          <div class="frow"><label data-i18n="fTunnelName">隧道名称（可选）</label><input type="text" id="dpTunnel" placeholder="my-console"></div>
+          <div class="frow"><label data-i18n="fTunnelToken">隧道令牌（可选）</label>
+            <input type="password" id="dpToken" value="" placeholder="" style="flex:1;min-width:200px" autocomplete="new-password">
+            <button class="btn small" id="dpTokenSave" data-i18n="btnSaveToken">保存令牌</button>
+            <button class="btn small danger" id="dpTokenDel" data-i18n="btnClear">清除</button>
+            <span id="dpTokenState" class="small"></span></div>
+          <p class="desc" data-i18n="deployTokenNote">令牌是凭据：只存本机 secrets.json，界面只显掩码，不进数据包与导出。</p>
+          <div class="frow"><label></label>
+            <button class="btn" id="dpGen" data-i18n="btnGenCfg">生成通道配置</button>
+            <button class="btn" id="dpCheck" data-i18n="btnCheckRemote">检测远程地址</button>
+            <span id="dpCheckResult" class="small"></span></div>
+          <div id="dpSnippetWrap" hidden>
+            <div class="frow" style="align-items:flex-start"><label data-i18n="genCfgLabel">通道配置</label>
+              <textarea id="dpSnippet" rows="13" readonly style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px"></textarea></div>
+            <div class="frow"><label></label><button class="btn small" id="dpCopy" data-i18n="btnCopy">复制</button></div>
+          </div>
+          <p class="desc" id="dpLocalInfo"></p>
+        </div>
+      </section>
+
+      <section class="setSec" id="sec-members" hidden>
+        <div class="card lockable">
+          <h3 data-i18n="secMembers">成员管理</h3>
+          <div class="frow"><label data-i18n="fPickMember">选择成员</label>
+            <select id="mPick" style="flex:1;min-width:200px"></select>
+            <button class="btn small" id="mAdd" data-i18n="btnAdd">新增成员</button>
+            <button class="btn small danger" id="mDel" data-i18n="btnDelete">删除成员</button></div>
+          <div id="mForm"></div>
+          <div class="frow"><label></label><button class="btn" id="mSave" data-i18n="btnSave">保存成员</button>
+            <button class="btn" id="mTest" data-i18n="btnTestConn">测试连接</button><span id="mWarn" class="warn"></span><span id="mTestResult" class="small"></span></div>
+          <p class="desc" data-i18n="credNote">密码 / API Key / 私钥只保存在本机程序目录的 secrets.json 里，不进数据包与导出文件；导出与迁移时凭据不跟随，到新电脑需重新填入。</p>
+        </div>
+        <div class="card lockable">
+          <h3 data-i18n="singleTitle">单个资源导入 / 导出</h3>
+          <div class="frow"><label data-i18n="btnExportOne">导出当前成员</label>
+            <button class="btn small" id="mExportOne" data-i18n="btnExportOne2">导出单个 JSON</button>
+            <span class="small muted" data-i18n="exportOneDesc">只导出上面选中的这一个资源（不含凭据明文）</span></div>
+          <div class="frow"><label data-i18n="btnImportOne">导入单个资源</label>
+            <input type="file" id="mImportFile" accept=".json,application/json">
+            <span class="small muted" data-i18n="importOneDesc">只新增、不覆盖现有数据；ID 撞车时自动改名</span></div>
+          <div class="frow" style="align-items:flex-start"><label data-i18n="importPaste">粘贴导入</label>
+            <textarea id="mImportText" rows="3" data-i18n-ph="importPastePh" placeholder="把单个资源的 JSON 粘贴到这里"></textarea>
+            <button class="btn small" id="mImportPaste" data-i18n="btnImportPaste">粘贴导入</button></div>
+        </div>
+      </section>
+
+      <section class="setSec" id="sec-zones" hidden>
+        <div class="card lockable">
+          <h3 data-i18n="secZones">区域管理</h3>
+          <div class="frow"><label data-i18n="fPickZone">选择区域</label>
+            <select id="zPick" style="flex:1;min-width:200px"></select>
+            <button class="btn small" id="zAdd" data-i18n="btnAddZone">新增区域</button>
+            <button class="btn small danger" id="zDel" data-i18n="btnDelete">删除区域</button></div>
+          <div id="zForm"></div>
+          <div class="frow"><label></label><button class="btn" id="zSave" data-i18n="btnSaveZone">保存区域</button><span id="zWarn" class="warn"></span></div>
+          <p class="desc" data-i18n="zoneDesc">区域大小（宽/深）与位置（中心 X/Z）也可以在「布局示意图」里直接拖。人数是容量参考：超员时办公室仍会自动排下，只是会提醒你拉大区域或加新区。</p>
+        </div>
+      </section>
+
+      <section class="setSec" id="sec-layout" hidden>
+        <div class="card lockable">
+          <h3 data-i18n="secLayout">布局示意图</h3>
+          <p class="desc" data-i18n="layoutDesc">拖动区域方块改位置、拖右下角圆点改大小；把成员小块拖到另一个区域里即可换区。改动即时保存，办公室布局随之变化（办公室页会自动重载重排）。</p>
+          <svg id="layoutSvg" viewBox="0 0 820 620" aria-label="布局示意图"></svg>
+          <div id="layoutNums" style="margin-top:10px"></div>
+        </div>
+      </section>
+
+      <section class="setSec" id="sec-lines" hidden>
+        <div class="card lockable">
+          <h3 data-i18n="secLines">台词库</h3>
+          <p class="desc" data-i18n="linesDesc">一行一句。赖床台词＝被叫醒的人说的；打工台词＝被催活的人说的；催促台词＝催活员说的。中英两套分别编辑，界面语言切到哪套就用哪套。</p>
+          <div id="linesForms"></div>
+          <div class="frow"><label></label><button class="btn" id="lSave" data-i18n="btnSaveLines">保存台词</button></div>
+        </div>
+      </section>
+
+      <section class="setSec" id="sec-data" hidden>
+        <div class="card">
+          <h3 data-i18n="secData">数据管理</h3>
+          <div class="frow"><label data-i18n="dExport">导出数据包</label>
+            <button class="btn small" id="dExport" data-i18n="btnExport">导出 JSON</button>
+            <span class="small muted" data-i18n="dExportDesc">成员、区域、关系与全部设置都在里面，拷到另一台电脑导入即还原</span></div>
+          <div class="frow"><label data-i18n="dImport">导入数据包</label>
+            <input type="file" id="dImportFile" accept=".json,application/json">
+            <span class="small muted" data-i18n="dImportDesc">会覆盖当前全部数据，导入前建议先导出一份备份</span></div>
+          <div class="frow"><label data-i18n="dReset">恢复出厂演示数据</label>
+            <button class="btn small" id="dReset" data-i18n="btnReset">恢复种子数据</button></div>
+          <div class="frow"><label data-i18n="dClear">清空重来</label>
+            <button class="btn small danger" id="dClear" data-i18n="btnClear">清空全部成员与事件</button>
+            <span class="small muted" data-i18n="dClearDesc">只保留一个默认区域，从零开始搭</span></div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</main>
+
+<aside id="drawer">
+  <button class="btn small" id="drawerClose" style="float:right">✕</button>
+  <h3 id="dName"></h3>
+  <div class="small muted" id="dSub"></div>
+  <div id="dBody"></div>
+  <button class="btn" id="dEdit" data-i18n="btnEditInSettings" style="margin-top:12px">在设置中编辑</button>
+</aside>
+
+<div id="toast"></div>
+<script src="./src/store.js"></script>
+<script src="./src/console.js"></script>
+</body>
+</html>
